@@ -28,7 +28,7 @@
 	<body>
 		<div class="container">
 		<h1>CS184/284A Spring 2025 Homework 1 Write-Up</h1>
-		<div style="text-align: center;">Names: </div>
+		<div style="text-align: center;">Names: Isabella Hu </div>
 
 		<br>
 
@@ -36,22 +36,202 @@
 		
 		<br>
 
-		Link to GitHub repository: (TODO) <a href="https://cs184.eecs.berkeley.edu/sp25">cs184.eecs.berkeley.edu/sp25</a>
+		Link to GitHub repository: <a href="https://github.com/cal-cs184/hw-rasterizer-team/">https://github.com/cal-cs184/hw-rasterizer-team</a>
 
-		<figure>
+		<!-- <figure>
 			<img src="lion.jpg" alt="Lion" style="width:50%"/>
 			<figcaption>You can add images with captions!</figcaption>
-		</figure>
+		</figure> -->
 
 		<!--
 		We've already added one heading per task, to make your write-up as navigable when grading. Please fit your write-up within these sections!
 		-->
 
 		<h2>Overview</h2>
-		Give a high-level overview of what you implemented in this homework. Think about what you've built as a whole. Share your thoughts on what interesting things you've learned from completing the homework.
+		<p>
+			In this assignment, I implemented a 2D rasterization pipeline capable of rendering SVG images. 
+			The project involved building fundamental computer graphics techniques from scratch, starting with basic triangle 
+			rasterization and gradually adding more sophisticated features to improve rendering quality.
+		</p>
+
+		<p>Key components implemented:</p>
+		<ul>
+			<li>Triangle rasterization with point-in-triangle testing</li>
+			<li>Antialiasing through supersampling</li>
+			<li>2D transformation operations (translation, scaling, rotation)</li>
+			<li>Barycentric color interpolation</li>
+			<li>Texture mapping with nearest and bilinear sampling method</li>
+			<li>Mipmapping for texture anti-aliasing</li>
+		</ul>
 
 		<h2>Task 1: Drawing Single-Color Triangles</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+		<h3>1.1 Triangle Rasterization Algorithm</h3>
+		<p>To rasterize triangle, there are the implementaion we used:</p>
+		<ol>
+			<li><b>Determine Bounding Box:</b>
+				<ul>
+					<li>Calculate min/max x and y coordinates from the three vertices of the triangle</li>
+					<li>This gave up the smallest rectangle containing the triangle</li>
+					<li>Instead of iterate all the pixels on the screen, we only iterate through the pixels in the bounding box</li>
+				</ul>
+			</li>
+			<li><b>Point-in-Triangle Test:</b>
+				<ul>
+					<li>For each pixel in the bounding box:</li>
+					<li>Compute cross products between edge vectors and point vectors</li>
+					<li>Formula for cross product (with A, B being the vertices and P being the point we are checking): \[(B - A) × (P - A) = (Bx - Ax) * (Py - Ay) - (By - Ay) * (Px - Ax)\]</li>
+					<li>
+						If all three cross products have the same sign, the point is inside:
+						<ul>
+							<li>
+							Since the 2D cross product is proportional to the sine of the angle between vectors, 
+							so its sign indicates whether the directiion is clockwise or counterclockwise. By calcualting the cross 
+							product of (P - A) with each triangle edge (B - A), (C - B), and (A - C). We check P’s orientation relative to each edge. 
+							If all three cross products share the same sign, P lies on the same side of every edge (either all angle are between 0°–180° or 180°–360°). In either case, P is inside the triangle.
+							</li>
+						</ul>
+						</li>
+				</ul>
+			</li>
+		</ol>
+
+		<h3>1.2 Algorithm Efficiency</h3>
+		<p>Why this approach is no worse than checking each sample in the bounding box :</p>
+		<ul>
+			<li><b>Bounded complexity:</b> Only samples within the triangle's bounding box are considered</li>
+			<li><b>Constant time edge tests:</b> Each point-in-triangle check is O(1) complexity</li>
+			<li>Hence the algorithm runs in linear time with respect to the number of points in the bounding box</li>
+
+		</ul>
+
+		<figure>
+			<img src="task1default.png" alt="Task1" width="400px"/>
+			<figcaption>Basic/test4.svg rendered with default parameters</figcaption>
+		</figure>
+
+		<h3>1.3 Extra Credit: Optimization with Early Rejection</h3>
+		<p>Implemented additional optimization:</p>
+		<ul>
+			<li><b>Row-wise Early Termination:</b>
+				<ul>
+					<li>Added a booleon variable tracks whether previous pixel in current row was inside triangle</li>
+					<li>If we find a pixel outside after being inside, that means we just exit the triangle, hence we stop checking that row</li>
+				</ul>
+			</li>
+			<li><b>Performance:</b>
+				<ul>
+					<li>Measured using terminal output tracking the number of processed pixels</li>
+					<li>Optimized version processes fewer pixels than the original method</li>
+				</ul>
+			</li>
+		</ul>
+
+		<div style="display: flex; flex-direction: column; align-items: center;">
+			<table style="width: 100%; text-align: center; border-collapse: collapse;">
+				<tr>
+					<td style="text-align: center;">
+						<img src="task1exit.png" width="400px"/>
+						<figcaption>Rasterization with early exit optimization</figcaption>
+					</td>
+					<td style="text-align: center;">
+						<img src="task1bool.png" width="400px"/>
+						<figcaption>Rasterization without early exit (normal case)</figcaption>
+					</td>
+				</tr>
+			</table>
+		</div>
+
+		<br>
+		<br>
+		<h2>Task 2: Antialiasing by Supersampling</h2>
+
+		<h3>2.1 Supersampling Algorithm</h3>
+		<p>The implementation addresses aliasing (jaggies) through supersampling:</p>
+		<ul>
+			<li><b>Core Concept:</b>
+				<ul>
+					<li>Binary pixel coverage tests create jagged edges (aliasing)</li>
+					<li>Supersampling evaluates multiple sample points per pixel</li>
+					<li>Final pixel color is the average of these sub-samples</li>
+				</ul>
+			</li>
+			<li><b>Sampling Pattern:</b>
+				<ul>
+					<li>Creates a uniform grid of sample points within each pixel</li>
+					<li>Grid dimensions: √sample_rate × √sample_rate</li>
+					<li>Example: sample_rate=4 → 2×2 grid per pixel</li>
+				</ul>
+			</li>
+		</ul>
+
+		<h3>2.2 Data Structure Modifications</h3>
+		<p>Key changes to support supersampling:</p>
+		<table border="1" style="border-collapse: collapse; margin: 10px 0;">
+			<tr>
+				<th>Original</th>
+				<th>Supersampled</th>
+			</tr>
+			<tr>
+				<td>sample_buffer stores per-pixel colors</td>
+				<td>sample_buffer stores per-sample colors</td>
+			</tr>
+			<tr>
+				<td>Dimensions: width × height</td>
+				<td>Dimensions: width × height × sample_rate</td>
+			</tr>
+		</table>
+
+		<p>Index calculation for sample access:</p>
+		<code>sample_index = (y * width + x) * sample_rate + (i * √sample_rate + j)</code>
+
+		<h3>2.3 Pipeline Modifications</h3>
+		<ol>
+			<li><b>Rasterization:</b>
+				<ul>
+					<li>Nested loops iterate through sub-samples within each pixel</li>
+					<li>Edge function evaluated at sub-sample locations</li>
+				</ul>
+			</li>
+			<li><b>Resolve Stage:</b>
+				<ul>
+					<li>Averages all sub-samples for each pixel</li>
+					<li>Stores result in final framebuffer</li>
+				</ul>
+			</li>
+		</ol>
+
+		<h3>2.4 Anti-Aliasing Mechanism</h3>
+		<p>How supersampling reduces aliasing artifacts:</p>
+		<ul>
+			<li><b>Frequency Principle:</b>
+				<ul>
+					<li>Triangle edges are high-frequency signals</li>
+					<li>Nyquist theorem requires ≥2× sampling for reconstruction</li>
+				</ul>
+			</li>
+			<li><b>Visual Effect:</b>
+				<ul>
+					<li>Binary edges → gradient transitions</li>
+					<li>Jaggies replaced with smooth pixel transitions</li>
+				</ul>
+			</li>
+		</ul>
+
+		<div style="display: flex; flex-direction: column; align-items: center;">
+			<table style="width: 100%; text-align: center; border-collapse: collapse;">
+				<tr>
+					<td style="text-align: center;">
+						<img src="no_aa.png" width="400px"/>
+						<figcaption>Without supersampling (aliasing visible)</figcaption>
+					</td>
+					<td style="text-align: center;">
+						<img src="with_aa.png" width="400px"/>
+						<figcaption>With supersampling (smooth edges)</figcaption>
+					</td>
+				</tr>
+			</table>
+		</div>
 
 		<p>Here is an example 2x2 gridlike structure using an HTML table. Each <b>tr</b> is a row and each <b>td</b> is a column in that row. You might find this useful for framing and showing your result images in an organized fashion.</p>
 		<div style="display: flex; flex-direction: column; align-items: center;">
