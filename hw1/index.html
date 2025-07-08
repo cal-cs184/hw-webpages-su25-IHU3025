@@ -131,11 +131,11 @@
 			<table style="width: 100%; text-align: center; border-collapse: collapse;">
 				<tr>
 					<td style="text-align: center;">
-						<img src="task1exit.png" width="400px"/>
+						<img src="task1exit.png" width="200px"/>
 						<figcaption>Rasterization with early exit optimization</figcaption>
 					</td>
 					<td style="text-align: center;">
-						<img src="task1bool.png" width="400px"/>
+						<img src="task1bool.png" width="200px"/>
 						<figcaption>Rasterization without early exit (normal case)</figcaption>
 					</td>
 				</tr>
@@ -147,18 +147,20 @@
 		<h2>Task 2: Antialiasing by Supersampling</h2>
 
 		<h3>2.1 Supersampling Algorithm</h3>
-		<p>The implementation addresses aliasing (jaggies) through supersampling:</p>
+		<p>To addresses aliasing (jaggies) through supersampling: we rasterize triangles at a high resolution and resolving them to the framebuffer by averaging the sample value for each pixel. </p>
 		<ul>
 			<li><b>Core Concept:</b>
 				<ul>
 					<li>Binary pixel coverage tests create jagged edges (aliasing)</li>
 					<li>Supersampling evaluates multiple sample points per pixel</li>
 					<li>Final pixel color is the average of these sub-samples</li>
+					<li>Result smoother edge</li>
+
 				</ul>
 			</li>
 			<li><b>Sampling Pattern:</b>
 				<ul>
-					<li>Creates a uniform grid of sample points within each pixel</li>
+					<li>Instead sampling each pixel once, we creates a uniform grid of sample points within each pixel</li>
 					<li>Grid dimensions: √sample_rate × √sample_rate</li>
 					<li>Example: sample_rate=4 → 2×2 grid per pixel</li>
 				</ul>
@@ -166,6 +168,8 @@
 		</ul>
 
 		<h3>2.2 Data Structure Modifications</h3>
+		<p>We adapt from the original data structure from the basic triangle rasterization,
+			 using the sample_buffer to store the color vector of our sampling point. </p>
 		<p>Key changes to support supersampling:</p>
 		<table border="1" style="border-collapse: collapse; margin: 10px 0;">
 			<tr>
@@ -181,13 +185,17 @@
 				<td>Dimensions: width × height × sample_rate</td>
 			</tr>
 		</table>
+		<p>Instead of each element in the sample_buffer representing a pixel 
+			(e.g., [A, B, C, D]), each element now represents a subsample within a pixel 
+			(e.g., [A0, A1, A2, A3, B0, B1, B2, B3], sample_rate = 4).
+</p>
 
-		<p>Index calculation for sample access:</p>
+		<p>Index calculation for sub sample points:</p>
 		<code>sample_index = (y * width + x) * sample_rate + (i * √sample_rate + j)</code>
 
 		<h3>2.3 Pipeline Modifications</h3>
 		<ol>
-			<li><b>Rasterization:</b>
+			<li><b>Rasterization changes:</b>
 				<ul>
 					<li>Nested loops iterate through sub-samples within each pixel</li>
 					<li>Edge function evaluated at sub-sample locations</li>
@@ -201,15 +209,10 @@
 			</li>
 		</ol>
 
-		<h3>2.4 Anti-Aliasing Mechanism</h3>
-		<p>How supersampling reduces aliasing artifacts:</p>
+		<h3>2.4 How Supersampling Reduces Aliasing</h3>
+		<p>It capture more information about the high frequency edges before downsampling to pixel
+			 resolution, result smoother edges → less jaggies.</p>
 		<ul>
-			<li><b>Frequency Principle:</b>
-				<ul>
-					<li>Triangle edges are high-frequency signals</li>
-					<li>Nyquist theorem requires ≥2× sampling for reconstruction</li>
-				</ul>
-			</li>
 			<li><b>Visual Effect:</b>
 				<ul>
 					<li>Binary edges → gradient transitions</li>
@@ -219,60 +222,216 @@
 		</ul>
 
 		<div style="display: flex; flex-direction: column; align-items: center;">
+		<table style="width: 100%; text-align: center; border-collapse: collapse;">
+			<tr>
+			<td style="text-align: center;">
+				<img src="task21.png" width="200px"/>
+				<figcaption>sample rates = 1</figcaption>
+			</td>
+			<td style="text-align: center;">
+				<img src="task22.png" width="200px"/>
+				<figcaption>sample rates = 4</figcaption>
+			</td>
+			<td style="text-align: center;">
+				<img src="task24.png" width="200px"/>
+				<figcaption>sample rates = 16</figcaption>
+			</td>
+			</tr>
+		</table>
+		</div>
+
+		<h3>Extra Credit: Jittered Supersampling</h3>
+		<p>
+		As an alternative method to the uniform grid-based supersampling, I implemented <strong>jittered 
+			sampling</strong>. So instead of placing sub-samples uniformly in a regular grid, we apply a small 
+			random offset (jitter) to each sub-sample's position within its grid cell.
+		</p>
+
+		<p>
+		By adding this slight randomness, 
+		it helps avoid visible patterns and makes the image look smoother overall.
+		</p>
+
+		<div style="display: flex; flex-direction: column; align-items: center;">
 			<table style="width: 100%; text-align: center; border-collapse: collapse;">
 				<tr>
 					<td style="text-align: center;">
-						<img src="no_aa.png" width="400px"/>
-						<figcaption>Without supersampling (aliasing visible)</figcaption>
+						<img src="task2ec1.png" width="200px"/>
+						<figcaption>Without jittering, Sample rate = 9</figcaption>
 					</td>
 					<td style="text-align: center;">
-						<img src="with_aa.png" width="400px"/>
-						<figcaption>With supersampling (smooth edges)</figcaption>
+						<img src="task2ec2.png" width="200px"/>
+						<figcaption>With jittering, Sample rate = 9</figcaption>
 					</td>
 				</tr>
 			</table>
 		</div>
 
-		<p>Here is an example 2x2 gridlike structure using an HTML table. Each <b>tr</b> is a row and each <b>td</b> is a column in that row. You might find this useful for framing and showing your result images in an organized fashion.</p>
-		<div style="display: flex; flex-direction: column; align-items: center;">
-			<table style="width: 100%; text-align: center; border-collapse: collapse;">
-			  <tr>
-				<td style="text-align: center;">
-				  <img src="lion.jpg" width="400px"/>
-				  <figcaption>Caption goes here.</figcaption>
-				</td>
-				<td style="text-align: center;">
-				  <img src="lion.jpg" width="400px"/>
-				  <figcaption>Caption goes here.</figcaption>
-				</td>
-			  </tr>
-			  <tr>
-				<td style="text-align: center;">
-				  <img src="lion.jpg" width="400px"/>
-				  <figcaption>Caption goes here.</figcaption>
-				</td>
-				<td style="text-align: center;">
-				  <img src="lion.jpg" width="400px"/>
-				  <figcaption>Caption goes here.</figcaption>
-				</td>
-			  </tr>
-			</table>
-		</div>
-		
-		<h2>Task 2: Antialiasing by Supersampling</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
+		
+	
 		<h2>Task 3: Transforms</h2>
 		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
 		<h2>Task 4: Barycentric coordinates</h2>
 		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
-		<h2>Task 5: "Pixel sampling" for texture mapping</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+		<br>
+		<br>
+		<h2>Task 5: "Pixel Sampling" for Texture Mapping</h2>
+
+		<p>
+		Pixel sampling is the technique in which we fetch color values from a texture and 
+		map them onto a 2D triangle. Since coordinates are continuous while texels are discrete, 
+		we need a sampling method to interpolate between texels.
+		</p>
+
+		<h3>5.1 Implementation</h3>
+
+		<h4>Texture Lookup:</h4>
+		<p>
+		Given a normalized <code>(u, v)</code> coordinate, we scale it to the texture’s resolution to get the corresponding pixel location.
+		</p>
+		<p>
+		For example, if the texture is 512 × 512, a sample at <code>(0.5, 0.5)</code> maps to pixel <code>(256, 256)</code>.
+		</p>
+
+		<h4>Integration into Rasterization:</h4>
+		<p>
+		During triangle rasterization, for each sample point, we call either <code>sample_nearest()</code> or <code>sample_bilinear()</code> based on the <code>PixelSampleMethod</code> setting.
+		</p>
+
+		<h3>5.2 Nearest-Neighbor Sample (P_NEAREST)</h3>
+		<ul>
+		<li>Takes the color of the closest texel to the sample point by rounding.</li>
+		<li>Less computation but produces a pixelated result since it does not take surrounding texels into account.</li>
+		</ul>
+
+		<h3>5.3 Bilinear Sampling (P_LINEAR)</h3>
+		<ul>
+		<li>Interpolates between the four nearest texels for a smoother result using the lerp formula: <code>(1 - t) * c00 + t * c01</code>, with <code>t</code> being the weight calculated from the distance between the point and <code>c00</code>.</li>
+		<li>Perform linear interpolation horizontally first using <code>lerp(c00, c10, s)</code> and <code>lerp(c01, c11, s)</code>, then interpolates between the two results to get the final color.</li>
+		<li>Reduces blockiness but requires more computation due to interpolation.</li>
+		</ul>
+
+			<div style="display: flex; flex-direction: column; align-items: center;">
+			<table style="width: 100%; text-align: center; border-collapse: collapse;">
+			  <tr>
+				<td style="text-align: center;">
+				  <img src="task5n.png" width="400px"/>
+				  <figcaption>P_NEAREST, 1 sample/pixel</figcaption>
+				</td>
+				<td style="text-align: center;">
+				  <img src="task5b.png" width="400px"/>
+				  <figcaption>BILINEAR, 1 sample/pixel</figcaption>
+				</td>
+			  </tr>
+			  <tr>
+				<td style="text-align: center;">
+				  <img src="t5n16.png" width="400px"/>
+				  <figcaption>P_NEAREST, 16 sample/pixel</figcaption>
+				</td>
+				<td style="text-align: center;">
+				  <img src="t5b16.png" width="400px"/>
+				  <figcaption>BILINEAR, 16 sample/pixel</figcaption>
+				</td>
+			  </tr>
+			</table>
+		</div>
+
+
+		<h3>5.4 Difference Between the Two Sampling Methods</h3>
+		<p>
+		The difference is most noticeable when textures contain high-frequency detail, like the 
+		white longitude/latitude lines on a map. Bilinear filtering smooths transitions between texels,
+		while nearest-neighbor sampling creates abrupt jumps.
+		</p>
+
+
 
 		<h2>Task 6: "Level Sampling" with mipmaps for texture mapping</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+		<h4>6.1 Core Concept:</h4>
+		<p>
+		When a texture is minified is viewed from far away or at a steep angle, each screen pixel
+		 corresponds to a large area of the texture. Sampling from the original high-resolution 
+		 texture in this case can lead to two problems:
+		</p>
+		<ul>
+		<li><b>Blurring:</b> The texture looks smeared because each pixel 
+			averages too much detail from the texture.</li>
+		<li><b>Moiré Patterns:</b> High frequency texture details can create strange 
+			ripple-like patterns when undersampled.</li>
+		</ul>
+
+		<p>
+		Supersampling helps with geometric aliasing but not with 
+		texture aliasing, since it still samples 
+		from the same high-frequency texture. 
+		To address this problem, level sampling (mipmapping) uses precomputed 
+		lower-resolution textures and selects the appropriate one based 
+		on screen-space derivatives.
+		</p>
+		
+		<h3>6.2 Trade-offs Between Level Sampling Techniques</h3>
+
+		<table style="width: 100%; border-collapse: collapse; text-align: center;" border="1">
+		<thead>
+			<tr>
+			<th>Technique</th>
+			<th>Speed</th>
+			<th>Memory Usage</th>
+			<th>Antialiasing Power</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+			<td><b>L_ZERO</b></td>
+			<td>Fast: always samples from base mip level (level 0)</td>
+			<td>Low: only uses the original texture</td>
+			<td>Poor: can result aliasing and moiré</td>
+			</tr>
+			<tr>
+			<td><b>L_NEAREST</b></td>
+			<td>Moderate: selects the closest mip level based on screen-space derivatives</td>
+			<td>Moderate: requires precomputed mipmaps</td>
+			<td>Good: reduces aliasing but may show level transitions</td>
+			</tr>
+			<tr>
+			<td><b>L_LINEAR</b></td>
+			<td>Slower: blends between two mip levels (trilinear filtering)</td>
+			<td>Moderate: uses mipmaps and performs extra interpolation</td>
+			<td>Better: smooth transitions and reduced aliasing</td>
+			</tr>
+		</tbody>
+		</table>
+		</ul>
+
+			<div style="display: flex; flex-direction: column; align-items: center;">
+			<table style="width: 100%; text-align: center; border-collapse: collapse;">
+			  <tr>
+				<td style="text-align: center;">
+				  <img src="task5n.png" width="400px"/>
+				  <figcaption>P_NEAREST, 1 sample/pixel</figcaption>
+				</td>
+				<td style="text-align: center;">
+				  <img src="task5b.png" width="400px"/>
+				  <figcaption>BILINEAR, 1 sample/pixel</figcaption>
+				</td>
+			  </tr>
+			  <tr>
+				<td style="text-align: center;">
+				  <img src="t5n16.png" width="400px"/>
+				  <figcaption>P_NEAREST, 16 sample/pixel</figcaption>
+				</td>
+				<td style="text-align: center;">
+				  <img src="t5b16.png" width="400px"/>
+				  <figcaption>BILINEAR, 16 sample/pixel</figcaption>
+				</td>
+			  </tr>
+			</table>
+		</div>
+
+
 
 		<h2>(Optional) Task 7: Extra Credit - Draw Something Creative!</h2>
 		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
