@@ -72,7 +72,7 @@
 			<li><b>Determine Bounding Box:</b>
 				<ul>
 					<li>Calculate min/max x and y coordinates from the three vertices of the triangle</li>
-					<li>This gave up the smallest rectangle containing the triangle</li>
+					<li>This gave us the smallest rectangle containing the triangle</li>
 					<li>Instead of iterate all the pixels on the screen, we only iterate through the pixels in the bounding box</li>
 				</ul>
 			</li>
@@ -401,11 +401,11 @@
 			<table style="width: 100%; text-align: center; border-collapse: collapse;">
 			  <tr>
 				<td style="text-align: center;">
-				  <img src="task5n.png" width="400px"/>
+				  <img src="task5nn.png" width="400px"/>
 				  <figcaption>P_NEAREST, 1 sample/pixel</figcaption>
 				</td>
 				<td style="text-align: center;">
-				  <img src="task5b.png" width="400px"/>
+				  <img src="task5bb.png" width="400px"/>
 				  <figcaption>BILINEAR, 1 sample/pixel</figcaption>
 				</td>
 			  </tr>
@@ -435,14 +435,14 @@
 		<h2>Task 6: "Level Sampling" with mipmaps for texture mapping</h2>
 		<h4>6.1 Core Concept:</h4>
 		<p>
-		When a texture is minified is viewed from far away or at a steep angle, each screen pixel
+		When a texture is minified or is viewed from far away or at a steep angle, each screen pixel
 		 corresponds to a large area of the texture. Sampling from the original high-resolution 
 		 texture in this case can lead to two problems:
 		</p>
 		<ul>
 		<li><b>Blurring:</b> The texture looks smeared because each pixel 
 			averages too much detail from the texture.</li>
-		<li><b>Moiré Patterns:</b> High frequency texture details can create strange 
+		<li><b>Moiré Patterns:</b> High frequency texture details can create 
 			ripple-like patterns when undersampled.</li>
 		</ul>
 
@@ -491,13 +491,9 @@
 		</p>
 
 		<p>
-		When using <code>L_LINEAR</code>, we calculate:
+		When using <code>L_LINEAR</code>, we calculate the two nearest level <code>level_base </code> and <code>level_next </code>
 		</p>
-		<pre>
-		level_base = floor(level)
-		level_next = ceil(level)
-		weight = level - level_base
-		</pre>
+
 		<p>
 		Then blend the results from both levels using lerp formula:
 		</p>
