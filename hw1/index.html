@@ -32,11 +32,11 @@
 
 		<br>
 
-		Link to webpage: (TODO) <a href="https://cs184.eecs.berkeley.edu/sp25">cs184.eecs.berkeley.edu/sp25</a>
+		Link to webpage: <a href="https://cal-cs184.github.io/hw-webpages-su25-IHU3025/hw1/index.html">cal-cs184.github.io/hw-webpages-su25-IHU3025/hw1/index.html</a>
 		
 		<br>
 
-		Link to GitHub repository: <a href="https://github.com/cal-cs184/hw-rasterizer-team/">https://github.com/cal-cs184/hw-rasterizer-team</a>
+		Link to GitHub repository: <a href="https://github.com/cal-cs184/hw-rasterizer-team/">ithub.com/cal-cs184/hw-rasterizer-team</a>
 
 		<!-- <figure>
 			<img src="lion.jpg" alt="Lion" style="width:50%"/>
@@ -271,8 +271,21 @@
 		
 	
 		<h2>Task 3: Transforms</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+		<p>
+		My goal was to pose the robot so it looks like it's waving its right arm.
+		</p>
 
+		<h4>Transformations Used</h4>
+		<ul>
+		<li><b>Translation:</b> Moved the right arm upward and outward.</li>
+		<li><b>Rotation:</b> Rotated arm segments</li>
+		</ul>
+		<figure>
+			<img src="task3.png" alt="Task1" width="200px"/>
+			<figcaption>Cubeman waving</figcaption>
+		</figure>
+
+	
 		<br>
 		<br>
 		<h2>Task 4: Barycentric coordinates</h2>
@@ -281,6 +294,7 @@
 		f a point within a triangle using a weighted combination 
 		of the triangle's three vertices. 
 		</p>
+		
 
 		<p>Formula: <code>P = αA + βB + γC</code>, where <code>α + β + γ = 1</code></p>
 		<p>
@@ -298,6 +312,50 @@
 			<img src="task4_circle.png" alt="Task1" width="200px"/>
 			<figcaption>test7 sample rate = 1</figcaption>
 			</figure>
+
+		<h3>Extra Credit: Viewport Rotation Feature</h2>
+
+		<p>
+		I implemented viewport rotation using the <code>'['</code> and <code>']'</code> keys. 
+		Pressing <code>'['</code> rotates the view counterclockwise, 
+		and <code>']'</code> rotates it clockwise. 
+		</p>
+
+		<h4>Implementation:</h4>
+
+		<p>
+		1. Added a rotation state in <code>drawrend.h</code>: created a new attribute
+		 to the <code>DrawRend</code> class to keep track of the rotation angle:
+		</p>
+		<pre><code>float rotation_angle = 0.0f;</code></pre>
+
+		<p>
+		2. Updated transformation matrix in <code>DrawRend::redraw()</code>: inserted a rotation
+		 matrix between the <code>svg_to_ndc</code> and <code>ndc_to_screen</code> matrices. 
+		 To rotate around the center of the screen rather than the origin, 
+		 I surrounded the rotation with translation matrices 
+		 (translate the object to the origin before applying rotation, 
+		 then translate it back to its original position afterward)
+		</p>
+
+
+		<p>
+		3. Added keyboard controls in <code>DrawRend::keyboard_event()</code>, handled 
+		the <code>'['</code> and <code>']'</code> keys to adjust the rotation 
+		angle and trigger a redraw
+		</p>
+		
+
+		<h3>Result</h3>
+		<p>Below is an example image rotated using the new key controls:</p>
+			<div style="display: flex; justify-content: center; gap: 0; text-align: center;">
+		<div>
+			<img src="task4ec1.png" width="400px" />
+		</div>
+		<div>
+			<img src="task4ec2.png" width="400px" />
+		</div>
+		</div>
 
 
 
@@ -508,27 +566,61 @@
 			<table style="width: 100%; text-align: center; border-collapse: collapse;">
 			  <tr>
 				<td style="text-align: center;">
-				  <img src="task5n.png" width="400px"/>
-				  <figcaption>P_NEAREST, 1 sample/pixel</figcaption>
+				  <img src="0_n.png" width="400px"/>
+				  <figcaption>L_ZERO, P_NEAREST </figcaption>
 				</td>
 				<td style="text-align: center;">
-				  <img src="task5b.png" width="400px"/>
-				  <figcaption>BILINEAR, 1 sample/pixel</figcaption>
+				  <img src="l0_b_wo.png" width="400px"/>
+				  <figcaption>L_ZERO, P_LINEAR</figcaption>
 				</td>
 			  </tr>
 			  <tr>
 				<td style="text-align: center;">
-				  <img src="t5n16.png" width="400px"/>
-				  <figcaption>P_NEAREST, 16 sample/pixel</figcaption>
+				  <img src="ln_pn.png" width="400px"/>
+				  <figcaption>L_NEAREST, P_NEAREST</figcaption>
 				</td>
 				<td style="text-align: center;">
-				  <img src="t5b16.png" width="400px"/>
-				  <figcaption>BILINEAR, 16 sample/pixel</figcaption>
+				  <img src="ln_pb.png" width="400px"/>
+				  <figcaption>L_NEAREST, P_LINEAR</figcaption>
 				</td>
+				
 			  </tr>
 			</table>
 		</div>
 
+		<h3>Extra Credit: Anisotropic Sampling</h3>
+
+		<p>
+		As an improvement to bilinear sampling, I implemented a basic form of anisotropic filtering. 
+		Which samples multiple points along the direction of greatest texture distortion 
+		(either <code>p_dx_uv</code> or <code>p_dy_uv</code>) to capture detail better in a stretched texture.
+		</p>
+
+		<p>
+		Implementation:
+		</p>
+		<ul>
+		<li>1. Chooses the dominant direction of UV change (horizontal or vertical) by caluclating the derivative</li>
+		<li>2. Samples <code>num_samples</code> points along that direction using bilinear sampling.</li>
+		<li>3. Averages the results to produce the final color.</li>
+		</ul>
+		<div style="display: flex; justify-content: center; gap: 40px; text-align: center;">
+		<div>
+			<img src="l0_b_wo.png" width="400px" />
+			<figcaption>Without Anisotropic Sampling</figcaption>
+		</div>
+		<div>
+			<img src="0_l.png" width="400px" />
+			<figcaption>With Anisotropic Sampling</figcaption>
+		</div>
+		</div>
+
+		<p>
+		The version with anisotropic sampling is 
+		significantly smoother compared to standard bilinear sampling. 
+		</p>
+
+		
 
 
 		<h2>(Optional) Task 7: Extra Credit - Draw Something Creative!</h2>
